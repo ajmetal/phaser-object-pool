@@ -22,11 +22,6 @@ Boot.prototype = {
 
   create: function () {
 
-    //---------------- Start dat.gui code ----------------
-
-    //This object defines all the default values we can change with dat.gui
-    //make sure it's either global (defined outside of all functions)
-    //or it's added as a property of the game. (this.game.settings = settings;)
     settings = {
 
       // Debug controls
@@ -34,10 +29,10 @@ Boot.prototype = {
       debugPlayerBody: false,
       debugPlayerBodyInfo: false,
       debugCameraInfo: false,
-      debugFps: false,
+      debugFps: true,
       sfxOn: true,
 
-      usePool: false,
+      usePool: true,
 
       // Player properties
       rateOfFire: 200,
@@ -46,34 +41,6 @@ Boot.prototype = {
     };
 
     this.game.settings = settings;
-
-    //Give a reference to the gui to the game.
-    this.game.gui = new dat.GUI({
-      width: 350
-    });
-
-    //This allows us to save (and remember) our settings.
-    this.game.gui.useLocalStorage = true;
-    this.game.gui.remember(settings);
-
-    //stepSize lets us choose the precision level of our gui
-    var stepSize = 1;
-
-    // Player
-    this.game.gui.playerFolder = this.game.gui.addFolder('Projectiles');
-    this.game.gui.playerFolder.add(settings, 'rateOfFire').min(0).max(1000).step(stepSize).name('Rate of Fire');
-    this.game.gui.playerFolder.add(settings, 'bulletSpeed').min(0).max(2000).step(stepSize).name('Bullet Speed');
-
-    //Debug
-    this.game.gui.debugFolder = this.game.gui.addFolder('Debug');
-    this.game.gui.debugFolder.add(settings, 'debugFps').name('FPS');
-    this.game.gui.debugFolder.add(settings, 'debugCollisionLayer').name('Collision Layer');
-    this.game.gui.debugFolder.add(settings, 'debugPlayerBody').name('Player Body');
-    this.game.gui.debugFolder.add(settings, 'debugPlayerBodyInfo').name('Player Body Info');
-    this.game.gui.debugFolder.add(settings, 'debugCameraInfo').name('Camera Info');
-    this.game.gui.debugFolder.add(settings, 'usePool').name('use Pool');
-
-    //---------------- end dat.gui code ----------------
 
     //make pixel art not look shitty!
     this.game.renderer.renderSession.roundPixels = true;
@@ -149,7 +116,7 @@ Play.prototype = {
     this.lastFired = this.game.time.now;
 
     //OBJECT POOL
-    this.NUM_BULLETS = 20;
+    this.NUM_BULLETS = 100;
     this.bulletPool = this.game.add.group();
     for (var i = 0; i < this.NUM_BULLETS; ++i) {
 
@@ -169,14 +136,24 @@ Play.prototype = {
       if (!this.game.settings.usePool) {
 
         this.game.add.existing(new Bullet(this.game, this.start.x, this.start.y));
+        this.game.add.existing(new Bullet(this.game, this.start.x, this.start.y - 64));
+        this.game.add.existing(new Bullet(this.game, this.start.x, this.start.y - 32));
+        this.game.add.existing(new Bullet(this.game, this.start.x, this.start.y + 64));
+        this.game.add.existing(new Bullet(this.game, this.start.x, this.start.y + 32));
 
       } else {
 
-        var bullet = this.bulletPool.getFirstDead();
-        if(bullet === null || bullet === undefined) return;
-        bullet.reset(this.start.x, this.start.y);
-        bullet.revive();
-        
+        for (let i = 0; i < 5; ++i) {
+          var bullet = this.bulletPool.getFirstDead();
+          if (bullet === null || bullet === undefined) return;
+
+          bullet.reset(this.start.x, 64 + (32 * i));
+
+          bullet.body.velocity.x = 150;
+          bullet.body.velocity.y = 0;
+          bullet.checkWorldBounds = true;
+          bullet.outOfBoundsKill = true;
+        }
 
       }
       this.lastFired = this.game.time.now;
@@ -186,12 +163,14 @@ Play.prototype = {
   render: function () {
 
     //early return if there's a problem with the gui
-    if (this.game.gui === undefined || this.game.gui === null) return;
+    //if (this.game.gui === undefined || this.game.gui === null) return;
 
 
     if (settings.debugFps) {
       this.game.debug.text('FPS: ' + game.time.fps, 16, 16, 'yellow');
     }
+
+    this.game.debug.text('Pooling Objects ' + game.settings.usePool, 16, 32, 'yellow');
   }
 
 };

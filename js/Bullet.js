@@ -10,10 +10,7 @@ Bullet = function(game, x, y) {
     this.anchor.setTo(0.5);
 
     this.events.onRevived.add(function() {
-        this.body.velocity.x = 150;
-        this.body.velocity.y = 0;
-        this.checkWorldBounds = true;
-        this.outOfBoundsKill = true;
+        //add whatever you want here
     }, this);
 
     this.events.onKilled.add(function() {
